@@ -1,0 +1,3 @@
+[submodule "lib/zig-vst"]
+	path = lib/zig-vst
+	url = https://github.com/schroffl/zig-vst
