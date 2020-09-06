@@ -13,7 +13,7 @@ pub const Filter = struct {
     }
 
     pub fn process(self: *Filter, sample: f32) f32 {
-        var iterator = self.history.span();
+        var iterator = self.history.iterate();
         var i: usize = 1;
         var result = sample * self.coefficients[0];
 
