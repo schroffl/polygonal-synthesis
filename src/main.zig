@@ -68,7 +68,7 @@ export fn VSTPluginMain(callback: api.HostCallback) ?*api.AEffect {
 
         .num_programs = 0,
         .num_params = 0,
-        .num_inputs = 2,
+        .num_inputs = 0,
         .num_outputs = 2,
         .flags = api.Plugin.Flag.toBitmask(&[_]api.Plugin.Flag{
             .CanReplacing, .IsSynth,
