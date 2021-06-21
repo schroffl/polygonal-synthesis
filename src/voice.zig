@@ -6,8 +6,8 @@ const midi = @import("./midi.zig");
 const Self = @This();
 
 pub const Mode = union(enum) {
-    Mono: PolyOsc,
-    PhaseOffset: PolyOsc,
+    Mono: PolyOscillator,
+    PhaseOffset: PolyOscillator,
 };
 
 sample_rate: f32 = 1,
