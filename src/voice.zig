@@ -1,4 +1,4 @@
-const PolyOsc = @import("./poly_synth.zig").PolyOscillator;
+const PolyOscillator = @import("./poly_oscillator.zig");
 const Rational = @import("./rational.zig").Rational;
 const ADSR = @import("./adsr.zig");
 const midi = @import("./midi.zig");
