@@ -150,6 +150,7 @@ fn onDispatch(
                 _ = zig_vst.helper.setBuffer(u8, buf, "schroffl", api.VendorNameMaxLength);
             },
             .GetApiVersion => return 2400,
+            .GetCategory => return api.Plugin.Category.Synthesizer.toI32(),
             else => {},
         }
     } else {
