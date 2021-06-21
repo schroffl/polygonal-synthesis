@@ -7,10 +7,7 @@ const Self = @This();
 
 pub const Mode = union(enum) {
     Mono: PolyOsc,
-    PhaseOffset: struct {
-        osc1: PolyOsc,
-        osc2: PolyOsc,
-    },
+    PhaseOffset: PolyOsc,
 };
 
 sample_rate: f32 = 1,
@@ -24,18 +21,7 @@ envelope: ADSR = .{
 },
 
 mode: Mode = .{
-    .PhaseOffset = .{
-        .osc1 = .{
-            .frequency = 0,
-            .order = Rational.init(54, 10),
-            .teeth = 0,
-        },
-        .osc2 = .{
-            .frequency = 0,
-            .order = Rational.init(54, 10),
-            .teeth = 0,
-        },
-    },
+    .PhaseOffset = .{},
 },
 
 volume: f32 = 1,
@@ -54,13 +40,16 @@ pub fn sample(self: *Self, left: *f32, right: *f32) void {
 
             switch (self.mode) {
                 .Mono => |osc| {
-                    const v = osc.sample(t) * multiplier * self.volume;
+                    const v = osc.sample(t).re * multiplier * self.volume;
+
                     left.* = v;
                     right.* = v;
                 },
-                .PhaseOffset => |oscs| {
-                    left.* = oscs.osc1.sample(t) * multiplier * self.volume;
-                    right.* = oscs.osc2.samplePhaseOffset(t) * multiplier * self.volume;
+                .PhaseOffset => |osc| {
+                    const complex = osc.sample(t);
+
+                    left.* = complex.re * multiplier * self.volume;
+                    right.* = complex.im * multiplier * self.volume;
                 },
             }
         },
@@ -83,12 +72,8 @@ pub fn setSampleRate(self: *Self, rate: f32) void {
 
 pub fn setOscillatorParam(self: *Self, comptime name: []const u8, value: anytype) void {
     switch (self.mode) {
-        .Mono => |*osc| {
+        .Mono, .PhaseOffset => |*osc| {
             @field(osc, name) = value;
-        },
-        .PhaseOffset => |*oscs| {
-            @field(oscs.osc1, name) = value;
-            @field(oscs.osc2, name) = value;
         },
     }
 }

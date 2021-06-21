@@ -1,30 +1,26 @@
 const std = @import("std");
 const Rational = @import("./rational.zig").Rational;
+const Complex = @import("./complex.zig").Complex;
 
 pub const PolyOscillator = struct {
     frequency: f32 = 440,
     detune: f32 = 0,
-    order: Rational = Rational.init(54, 10),
+    order: Rational = Rational.init(30, 10),
     teeth: f32 = 0.1,
     phase: f32 = 0,
 
     const two_pi = @as(f32, std.math.pi) * 2;
 
-    pub fn sample(self: PolyOscillator, t: f32) f32 {
-        const fundamental = two_pi * (self.frequency + self.detune);
+    pub fn sample(self: PolyOscillator, t: f32) Complex {
+        const fundamental = two_pi * self.frequency;
         const angle = fundamental * t * cycles(self.order);
 
-        // TODO Find out why the phasor seems to be rotating in the wrong direction
-        //      (which is why it says -angle below).
-        return project(-angle, self.order, self.teeth, self.phase);
-    }
+        const magnitude = amplitude(-angle, self.order, self.teeth);
 
-    pub fn samplePhaseOffset(self: PolyOscillator, t: f32) f32 {
-        const fundamental = two_pi * (self.frequency + self.detune);
-        const angle = fundamental * t * cycles(self.order);
-        const a = amplitude(angle, self.order, self.teeth);
-
-        return a * std.math.sin(-angle + self.phase);
+        return .{
+            .re = magnitude * std.math.cos(angle + self.phase),
+            .im = magnitude * std.math.sin(angle + self.phase),
+        };
     }
 
     fn cycles(order: Rational) f32 {
