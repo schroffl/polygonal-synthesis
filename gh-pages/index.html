@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                background-color: #fafafa;
+                color: #333;
+
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+
+                margin: 0px;
+                height: 100vh;
+                width: 100vw;
+                overflow: hidden;
+            }
+
+            .outer {
+                flex: 0;
+                padding: 16px;
+            }
+
+            .inner {
+                flex-grow: 1;
+                max-width: 100vh;
+            }
+
+            canvas {
+                width: 100%;
+                height: 100%;
+            }
+
+            dd {
+                margin-left: 0px;
+            }
+
+            .separator {
+                height: 1px;
+                background-color: #333;
+                width: 100%;
+                margin: 8px 0px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="outer">
+            <dl>
+                <dt>Order: <span id="orderText"></span></dt>
+                <dd>
+                    <input type="range" min="2.1" max="7" step="0.1" id="orderSlider">
+                </dd>
+
+                <div class="separator"></div>
+
+                <dt>Teeth: <span id="teethText"></span></dt>
+                <dd>
+                    <input type="range" min="0" max="10" step="0.001" id="teethSlider">
+                </dd>
+            </dl>
+        </div>
+
+        <div class="inner">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="outer">
+            <button id="button">Toggle visualization</button>
+        </div>
+
+        <script>
+            function polygon(angle, order, teeth) {
+                const top = Math.cos(Math.PI / order);
+                const mod = ((angle * order) / (2 * Math.PI)) % 1;
+                const bottom = Math.cos((Math.PI * 2) / order * mod - Math.PI / order + teeth);
+
+                return top / bottom;
+            }
+
+            function polarMap(angle, value, canvas) {
+                const center = {
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                };
+
+                angle += Math.PI / 2;
+
+                return {
+                    x: center.x + Math.sin(angle) * (center.x * value),
+                    y: center.y + Math.cos(angle) * (center.y * value),
+                };
+            }
+
+            function project(angle, value, canvas) {
+                const poly_x = Math.sin(angle) * value;
+
+                const h2 = canvas.height / 2;
+
+                return {
+                    x: angle / (Math.PI * 2) * canvas.width,
+                    y: h2 - poly_x * h2
+                };
+            }
+
+            function rational(numerator, divisor) {
+                return { numerator, divisor };
+            }
+
+            function rationalToFloat(r) {
+                return r.numerator / r.divisor;
+            }
+
+            function gcd(a, b) {
+                let tmp_a = a;
+                let tmp_b = b;
+
+                while (tmp_b != 0) {
+                    const old_b = tmp_b;
+                    tmp_b = tmp_a % tmp_b;
+                    tmp_a = old_b;
+                }
+
+                return tmp_a;
+            }
+
+            function calculateCycles(order) {
+                const frac = order.numerator % order.divisor;
+                const div = gcd(frac, order.divisor);
+
+                console.log(frac, div);
+
+                return order.divisor / div;
+            }
+
+
+            const ctx = canvas.getContext('2d');
+
+            canvas.height = 300;
+            canvas.width = 300;
+
+            const center = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+            };
+
+            let mapFn = polarMap;
+
+            function draw(orderR, teeth, map, customCycles) {
+                const samples = Math.floor(canvas.width);
+                const scale = 0.5;
+                const order = rationalToFloat(orderR);
+                const phasorCycles = typeof customCycles === 'number' ? customCycles : calculateCycles(orderR);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+
+                ctx.moveTo(canvas.width * map.originLocation.x, 0);
+                ctx.lineTo(canvas.width * map.originLocation.x, canvas.height);
+
+                ctx.moveTo(0, canvas.height * map.originLocation.y);
+                ctx.lineTo(canvas.width, canvas.height * map.originLocation.y);
+
+                ctx.strokeStyle = 'gray';
+                ctx.stroke();
+
+
+                ctx.beginPath();
+
+                // Draw Unit circle
+                for (let i = 0; i < samples; i++) {
+                    const progress = i / samples;
+                    const angle = progress * Math.PI * 2;
+
+                    const pos = map(angle, scale, canvas);
+
+                    if (i === 0) {
+                        ctx.moveTo(pos.x, pos.y);
+                    } else {
+                        ctx.lineTo(pos.x, pos.y);
+                    }
+                }
+
+                ctx.stroke();
+
+                ctx.beginPath();
+
+                for (let i = 0; i < samples; i++) {
+                    const progress = i / samples * phasorCycles;
+                    const angle = progress * Math.PI * 2;
+                    const value = polygon(angle, order, teeth) * scale;
+
+                    const pos = map(angle, value, canvas);
+
+                    if (i === 0) {
+                        ctx.moveTo(pos.x, pos.y);
+                    } else {
+                        ctx.lineTo(pos.x, pos.y);
+                    }
+                }
+
+                if (map.shouldClose) {
+                    ctx.closePath();
+                }
+
+                ctx.strokeStyle = 'red';
+                ctx.stroke();
+            }
+
+            function onChange() {
+                const order = parseFloat(orderSlider.value);
+                const teeth = parseFloat(teethSlider.value);
+
+                const max = parseFloat(orderSlider.max);
+                const step = parseFloat(orderSlider.step);
+
+                const divisor = Math.round(1 / step);
+                const numerator = Math.round(order / step);
+
+                const orderR = rational(numerator, divisor);
+
+                orderText.innerText = rationalToFloat(orderR).toFixed(4);
+                teethText.innerText = teeth.toFixed(4);
+
+                draw(orderR, teeth, mapFn);
+            }
+
+            orderSlider.addEventListener('input', onChange);
+            teethSlider.addEventListener('input', onChange);
+
+            button.addEventListener('click', e => {
+                mapFn = mapFn === project ? polarMap : project;
+                onChange();
+            });
+
+            polarMap.shouldClose = true;
+            polarMap.originLocation = { x: 0.5, y: 0.5 };
+
+            project.shouldClose = false;
+            project.originLocation = { x: 0, y: 0.5 };
+
+            orderSlider.value = 3.0;
+            teethSlider.value = 0.2;
+            onChange();
+
+            function onResize() {
+                const bounds = canvas.getBoundingClientRect();
+                canvas.width = bounds.width;
+                canvas.height = bounds.height;
+                onChange();
+            }
+
+            window.addEventListener('resize', onResize);
+            onResize();
+        </script>
+    </body>
+</html>
