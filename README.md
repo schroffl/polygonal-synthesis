@@ -5,3 +5,5 @@ There's a lot of things left to do before a usable comes out of this, but it's b
 
   * [Continuous Order Polygonal Waveform Synthesis](https://quod.lib.umich.edu/cgi/p/pod/dod-idx/continuous-order-polygonalwaveform-synthesis.pdf?c=icmc;idno=bbp2372.2016.104;format=pdf)
   * [Efficient Anti-Aliasing of a Complex Polygonal Oscillator](http://dafx17.eca.ed.ac.uk/papers/DAFx17_paper_100.pdf)
+
+I built a very basic visualization tool to get a grasp of everything. I'm not sure if that's 100% correct, but you can find it here: https://schroffl.github.io/polygonal-synthesis/
